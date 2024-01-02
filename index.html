@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplication Questions</title>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            flex-direction: column;
+        }
+
+        h1 {
+            font-size: 24px;
+        }
+
+        #question {
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+
+        #answer {
+            margin-top: 10px;
+        }
+
+        .correct {
+            background-color: #8FDB8F; /* Green */
+            animation: blink 1s 2;
+        }
+
+        .wrong {
+            background-color: #FF8C8C; /* Red */
+            animation: blink 1s 2;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+
+        input {
+            font-size: 16px;
+            padding: 5px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 5px;
+        }
+
+        #stats {
+            margin-top: 10px;
+        }
+
+        #clearButton {
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        #toggleIncorrectButton {
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        #incorrectQuestions {
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Multiplication Questions</h1>
+
+    <div id="question"></div>
+    <input type="number" id="userAnswer" placeholder="Enter your answer" oninput="checkRealtime()">
+    <div id="answer"></div>
+    <div id="stats"></div>
+    <button id="clearButton" onclick="clearLocalStorage()">Clear Records</button>
+    <button id="toggleIncorrectButton" onclick="toggleIncorrectQuestions()">Show/Hide Incorrect Questions</button>
+    <div id="incorrectQuestions"></div>
+
+    <script>
+        const answeredQuestions = [];
+        let currentQuestionObj;
+        let correctCount = 0;
+        let wrongCount = 0;
+        let incorrectQuestions = [];
+
+        // Load counts and incorrect questions from local storage
+        const loadFromLocalStorage = () => {
+            const storedCorrectCount = localStorage.getItem('correctCount');
+            const storedWrongCount = localStorage.getItem('wrongCount');
+            const storedIncorrectQuestions = localStorage.getItem('incorrectQuestions');
+
+            correctCount = storedCorrectCount ? parseInt(storedCorrectCount) : 0;
+            wrongCount = storedWrongCount ? parseInt(storedWrongCount) : 0;
+            incorrectQuestions = storedIncorrectQuestions ? JSON.parse(storedIncorrectQuestions) : [];
+        };
+
+        // Save counts and incorrect questions to local storage
+        const saveToLocalStorage = () => {
+            localStorage.setItem('correctCount', correctCount.toString());
+            localStorage.setItem('wrongCount', wrongCount.toString());
+            localStorage.setItem('incorrectQuestions', JSON.stringify(incorrectQuestions));
+        };
+
+        const generateRandomQuestion = () => {
+            let num1, num2;
+            do {
+                num1 = Math.floor(Math.random() * 10) + 1;
+                num2 = Math.floor(Math.random() * 10) + 1;
+                var questionString = `${num1} x ${num2} = ?`;
+            } while (answeredQuestions.includes(questionString));
+
+            return {
+                question: questionString,
+                answer: num1 * num2
+            };
+        };
+
+        const displayQuestion = () => {
+            currentQuestionObj = generateRandomQuestion();
+            const questionElement = document.getElementById("question");
+            questionElement.textContent = currentQuestionObj.question;
+            document.getElementById("userAnswer").value = "";
+            document.getElementById("answer").textContent = "";
+        };
+
+        const checkRealtime = () => {
+            const userAnswer = document.getElementById("userAnswer").value;
+
+            // Check in real-time only if the answer is two or three digits
+            if (userAnswer.length === String(currentQuestionObj.answer).length) {
+                if (parseInt(userAnswer) === currentQuestionObj.answer) {
+                    handleResult(true);
+                } else {
+                    handleResult(false);
+                }
+            }
+
+            // Hide the incorrect questions section while typing
+            hideIncorrectQuestions();
+        };
+
+        const handleResult = (isCorrect) => {
+            const answerElement = document.getElementById("answer");
+            const userAnswer = document.getElementById("userAnswer");
+            const statsElement = document.getElementById("stats");
+
+            if (isCorrect) {
+                answerElement.textContent = "Correct!";
+                userAnswer.classList.add("correct");
+                correctCount++;
+            } else {
+                answerElement.textContent = "Incorrect, try again!";
+                userAnswer.classList.add("wrong");
+                wrongCount++;
+                incorrectQuestions.push(currentQuestionObj.question);
+            }
+
+            // Display statistics
+            statsElement.textContent = `Correct: ${correctCount}, Incorrect: ${wrongCount}`;
+
+            setTimeout(() => {
+                userAnswer.classList.remove("correct", "wrong");
+                displayQuestion();
+            }, 2000);
+
+            // Add the answered question to the list
+            answeredQuestions.push(currentQuestionObj.question);
+
+            // Save counts and incorrect questions to local storage
+            saveToLocalStorage();
+        };
+
+        const clearLocalStorage = () => {
+            localStorage.removeItem('correctCount');
+            localStorage.removeItem('wrongCount');
+            localStorage.removeItem('incorrectQuestions');
+            correctCount = 0;
+            wrongCount = 0;
+            incorrectQuestions = [];
+            updateStats();
+            hideIncorrectQuestions();
+        };
+
+        const toggleIncorrectQuestions = () => {
+            const incorrectQuestionsElement = document.getElementById("incorrectQuestions");
+
+            if (incorrectQuestionsElement.style.display === 'none') {
+                showIncorrectQuestions();
+            } else {
+                hideIncorrectQuestions();
+            }
+        };
+
+        const showIncorrectQuestions = () => {
+            const incorrectQuestionsElement = document.getElementById("incorrectQuestions");
+            incorrectQuestionsElement.innerHTML = "<strong>Incorrect Questions:</strong>";
+
+            if (incorrectQuestions.length === 0) {
+                incorrectQuestionsElement.innerHTML += "No incorrect questions at the moment.";
+            } else {
+                for (const question of incorrectQuestions) {
+                    incorrectQuestionsElement.innerHTML += `<div>${question}</div>`;
+                }
+            }
+
+            // Show the block of incorrect questions
+            incorrectQuestionsElement.style.display = 'block';
+        };
+
+        const hideIncorrectQuestions = () => {
+            const incorrectQuestionsElement = document.getElementById("incorrectQuestions");
+            incorrectQuestionsElement.style.display = 'none';
+        };
+
+        const updateStats = () => {
+            const statsElement = document.getElementById("stats");
+            statsElement.textContent = `Correct: ${correctCount}, Incorrect: ${wrongCount}`;
+        };
+
+        // Display the first question on the initial page load, and load counts and incorrect questions from local storage
+        displayQuestion();
+        loadFromLocalStorage();
+        updateStats();
+    </script>
+</body>
+</html>
