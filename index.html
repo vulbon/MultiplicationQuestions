@@ -47,7 +47,7 @@
         input {
             font-size: 16px;
             padding: 5px;
-            width: 100%;
+            width: 80%;
             box-sizing: border-box;
             margin-top: 5px;
         }
@@ -76,7 +76,7 @@
     <h1>Multiplication Questions</h1>
 
     <div id="question"></div>
-    <input type="number" id="userAnswer" placeholder="Enter your answer" oninput="checkRealtime()">
+    <input type="text" id="userAnswer" inputmode="numeric" pattern="[0-9]*" placeholder="Enter your answer" oninput="checkRealtime()">
     <div id="answer"></div>
     <div id="stats"></div>
     <button id="clearButton" onclick="clearLocalStorage()">Clear Records</button>
@@ -84,27 +84,30 @@
     <div id="incorrectQuestions"></div>
 
     <script>
-        const answeredQuestions = [];
+        let answeredQuestions = [];
         let currentQuestionObj;
         let correctCount = 0;
         let wrongCount = 0;
         let incorrectQuestions = [];
 
-        // Load counts and incorrect questions from local storage
+        // Load counts, answered questions, and incorrect questions from local storage
         const loadFromLocalStorage = () => {
             const storedCorrectCount = localStorage.getItem('correctCount');
             const storedWrongCount = localStorage.getItem('wrongCount');
+            const storedAnsweredQuestions = localStorage.getItem('answeredQuestions');
             const storedIncorrectQuestions = localStorage.getItem('incorrectQuestions');
 
             correctCount = storedCorrectCount ? parseInt(storedCorrectCount) : 0;
             wrongCount = storedWrongCount ? parseInt(storedWrongCount) : 0;
+            answeredQuestions = storedAnsweredQuestions ? JSON.parse(storedAnsweredQuestions) : [];
             incorrectQuestions = storedIncorrectQuestions ? JSON.parse(storedIncorrectQuestions) : [];
         };
 
-        // Save counts and incorrect questions to local storage
+        // Save counts, answered questions, and incorrect questions to local storage
         const saveToLocalStorage = () => {
             localStorage.setItem('correctCount', correctCount.toString());
             localStorage.setItem('wrongCount', wrongCount.toString());
+            localStorage.setItem('answeredQuestions', JSON.stringify(answeredQuestions));
             localStorage.setItem('incorrectQuestions', JSON.stringify(incorrectQuestions));
         };
 
@@ -173,16 +176,18 @@
             // Add the answered question to the list
             answeredQuestions.push(currentQuestionObj.question);
 
-            // Save counts and incorrect questions to local storage
+            // Save counts, answered questions, and incorrect questions to local storage
             saveToLocalStorage();
         };
 
         const clearLocalStorage = () => {
             localStorage.removeItem('correctCount');
             localStorage.removeItem('wrongCount');
+            localStorage.removeItem('answeredQuestions');
             localStorage.removeItem('incorrectQuestions');
             correctCount = 0;
             wrongCount = 0;
+            answeredQuestions = [];
             incorrectQuestions = [];
             updateStats();
             hideIncorrectQuestions();
@@ -224,7 +229,7 @@
             statsElement.textContent = `Correct: ${correctCount}, Incorrect: ${wrongCount}`;
         };
 
-        // Display the first question on the initial page load, and load counts and incorrect questions from local storage
+        // Display the first question on the initial page load, and load counts, answered questions, and incorrect questions from local storage
         displayQuestion();
         loadFromLocalStorage();
         updateStats();
